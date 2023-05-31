@@ -1,16 +1,29 @@
+from enum import Enum
+
+
+class PivotSort(Enum):  # TODO: ask for callability, how do I make min/max a callback?
+    MAX = max
+    NO_SORT = False
+    MIN = min
+
+
 class MatrixForm:
-    def __init__(self, matrix: list[list[int]], b: list[int], pivot_sort=True):
+    def __init__(self, matrix: list[list[int]], b: list[list[int]], pivot_sort: PivotSort):
+        if not isinstance(pivot_sort, PivotSort):
+            raise TypeError("pivot_sort must be MAX, NO_SORT, or MIN")
         if len(matrix) != len(matrix[0]):
             raise IndexError("Only square matrices are allowed - one equation per variable")
         for row in matrix:
             if len(row) != len(matrix):
-                raise IndexError("Only square matrices are allowed - number of rows and columns must be equal in each row")
-
+                raise IndexError("Only square matrices allowed - number of rows and columns must be equal in each row")
+        if len(matrix[0]) != len(b):
+            raise IndexError("Matrix size does not match result vector")
         self.matrix = matrix
-        if pivot_sort:
-            self.pivot_sorted_matrix = self.get_pivot_sorted_matrix()
-        else:
+        if pivot_sort == PivotSort.NO_SORT:
             self.pivot_sorted_matrix = self.matrix
+        else:
+            self.pivot_sorted_matrix = self.get_pivot_sorted_matrix(pivot_sort)
+        self.variables = [None for x in b]
         self.b = b
         self._zero_matrix = [[0 for _ in self.matrix] for _ in self.matrix]
         self.diag_matrix = self._get_diag_matrix()
@@ -18,29 +31,36 @@ class MatrixForm:
         self.bottom_left_matrix = self.get_bottom_left_matrix()
         self.top_right_matrix = self.get_top_right_matrix()
         self.left_and_right_matrix = self.add_matrices(self.bottom_left_matrix, self.top_right_matrix)
+        self.inv_diag_times_b = self.get_inv_diag_times_b()
+        self.inv_diag_times_lr = self.get_inv_diag_times_lr()
 
-    def get_pivot_sorted_matrix(self) -> list[list[int]]:
+    def get_pivot_sorted_matrix(self, pivot_sort) -> list[list[int]]:
         matrix = [x[:] for x in self.matrix]
 
         for col in range(len(matrix[0])):
-            row_with_max_el_in_col = self.get_row_of_max_value_of_column(matrix[col:], col)
+            row_with_max_el_in_col = self.get_row_of_min_or_max_value_of_column(matrix[col:], col, pivot_sort)
             temp_row = [x for x in matrix[col]]
             matrix[col] = [x for x in matrix[row_with_max_el_in_col + col]]
             matrix[row_with_max_el_in_col + col] = [x for x in temp_row]
         return matrix
 
     @staticmethod
-    def get_row_of_max_value_of_column(matrix, col):
+    def get_row_of_min_or_max_value_of_column(matrix, col, pivot_sort):
         """
         returns the matrix\' row that contains the highest value in column
         :param matrix: matrix to check
         :param col: specified column
+        :param pivot_sort: sort min or max value to diagonal
         :return: row number (posInt)
         """
         column = []
         for row in range(len(matrix)):
             column.append(matrix[row][col])
-        return column.index(max(column))
+        match pivot_sort:
+            case PivotSort.MAX:
+                return column.index(max(column))
+            case PivotSort.MIN:
+                return column.index(min(column))
 
     def _get_diag_matrix(self) -> list[list[int]]:
         diag_matrix = [x[:] for x in self._zero_matrix]
@@ -73,6 +93,12 @@ class MatrixForm:
             i += 1
         return right_matrix
 
+    def get_inv_diag_times_b(self):
+        return self.multiply_matrices(self.inv_diag_matrix, self.b)
+
+    def get_inv_diag_times_lr(self):
+        return self.multiply_matrices(self.inv_diag_matrix, self.left_and_right_matrix)
+
     @staticmethod
     def add_matrices(l, r) -> list[list[int]]:
         lr_matrix = [x[:] for x in l]
@@ -99,10 +125,26 @@ class MatrixForm:
 
         return multiplied_matrix
 
+    @staticmethod
+    def jacobi_step(start_value: int, inv_diag_matrix_times_b: list[list[int]], inv_diag_matrix_times_left_and_right: list[list[int]]):
+        iterations = 0
+        x0 = 
+        print(f"x0: {x0}")
+        print(len(inv_diag_matrix_times_left_and_right))
+        xnext = x0
+        while True:
+            iterations += 1
+            print(f"iteration {iterations}:")
+            for equation in range(len(inv_diag_matrix_times_left_and_right)):
+                summands = []
+                for coefficient in range(len(inv_diag_matrix_times_left_and_right[equation])):
+                    summands.append(inv_diag_matrix_times_left_and_right[coefficient] * xnext[coefficient])
+                xnext[equation] = sum(*summands) + inv_diag_matrix_times_b[equation][0]
+                print(f"x{equation} = {xnext[equation]}")
+            print()
 
 
-class LinearSystem:
-    pass
+
 
 
 
@@ -110,20 +152,20 @@ if __name__ == "__main__":
     ausgeben = True
 
 
-    m6 = MatrixForm([
-        [1,   2,  3,  4,  5,  6],
-        [7,   8,  9, 10, 11, 12],
-        [13, 14, 15, 16, 17, 18],
-        [19, 20, 21, 22, 23, 24],
-        [25, 26, 27, 28, 29, 30],
-        [31, 32, 33, 34, 35, 36],
-    ], [13, 14, 15, 1, 1, 1], False)
+    # m6 = MatrixForm([
+    #     [1,   2,  3,  4,  5,  6],
+    #     [7,   8,  9, 10, 11, 12],
+    #     [13, 14, 15, 16, 17, 18],
+    #     [19, 20, 21, 22, 23, 24],
+    #     [25, 26, 27, 28, 29, 30],
+    #     [31, 32, 33, 34, 35, 36],
+    # ], [13, 14, 15, 1, 1, 1], False)
 
     m3 = MatrixForm([
         [-7, 4, -2],
         [4, 6, 1],
         [-1, 1, 3]
-    ], [2, -5, 4], False)
+    ], [[2], [-5], [4]], pivot_sort=PivotSort.NO_SORT)
 
 
     ausgabe = m3
@@ -135,23 +177,23 @@ if __name__ == "__main__":
         for row in range(len(ausgabe.pivot_sorted_matrix)):
             print(ausgabe.pivot_sorted_matrix[row])
 
-        print(f"\nDiagonalmatrix:")
-        for row in range(len(ausgabe.diag_matrix)):
-            print(ausgabe.diag_matrix[row])
-
-        print(f"\nInverse Diagonalmatrix:")
-        for row in range(len(ausgabe.inv_diag_matrix)):
-            print(ausgabe.inv_diag_matrix[row])
-
-        print(f"\nLinke untere Matrix:")
-        for row in range(len(ausgabe.bottom_left_matrix)):
-            print(ausgabe.bottom_left_matrix[row])
-
-        print(f"\nRechte obere Matrix:")
-        for row in range(len(ausgabe.top_right_matrix)):
-            print(ausgabe.top_right_matrix[row])
-
-        print(f"\nL+R:")
-        for row in range(len(ausgabe.left_and_right_matrix)):
-            print(ausgabe.left_and_right_matrix[row])
+        # print(f"\nDiagonalmatrix:")
+        # for row in range(len(ausgabe.diag_matrix)):
+        #     print(ausgabe.diag_matrix[row])
+        #
+        # print(f"\nInverse Diagonalmatrix:")
+        # for row in range(len(ausgabe.inv_diag_matrix)):
+        #     print(ausgabe.inv_diag_matrix[row])
+        #
+        # print(f"\nLinke untere Matrix:")
+        # for row in range(len(ausgabe.bottom_left_matrix)):
+        #     print(ausgabe.bottom_left_matrix[row])
+        #
+        # print(f"\nRechte obere Matrix:")
+        # for row in range(len(ausgabe.top_right_matrix)):
+        #     print(ausgabe.top_right_matrix[row])
+        #
+        # print(f"\nL+R:")
+        # for row in range(len(ausgabe.left_and_right_matrix)):
+        #     print(ausgabe.left_and_right_matrix[row])
 
