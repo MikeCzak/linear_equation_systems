@@ -5,9 +5,9 @@ from enum import Enum
 
 
 class PivotSort(Enum):  # TODO: ask for callability, how do I make min/max a callback?
-    MAX = max
+    MAX = 1
     NO_SORT = False
-    MIN = min
+    MIN = -1
 
 
 class MatrixForm:
@@ -22,12 +22,11 @@ class MatrixForm:
         if len(matrix[0]) != len(b):
             raise IndexError("Matrix size does not match result vector")
         self.matrix = matrix
+        self.b = b
         if pivot_sort == PivotSort.NO_SORT:
             self.pivot_sorted_matrix = self.matrix
         else:
             self.pivot_sorted_matrix = self.get_pivot_sorted_matrix(pivot_sort)
-        self.variables = [None for x in b]
-        self.b = b
         self._zero_matrix = [[0 for _ in self.matrix] for _ in self.matrix]
         self.diag_matrix = self._get_diag_matrix()
         self.inv_diag_matrix = self.get_inv_diag_matrix()
@@ -43,8 +42,11 @@ class MatrixForm:
         for col in range(len(matrix[0])):
             row_with_max_el_in_col = self.get_row_of_min_or_max_value_of_column(matrix[col:], col, pivot_sort)
             temp_row = [x for x in matrix[col]]
+            temp_b = self.b[col]
             matrix[col] = [x for x in matrix[row_with_max_el_in_col + col]]
+            self.b[col] = self.b[row_with_max_el_in_col + col]
             matrix[row_with_max_el_in_col + col] = [x for x in temp_row]
+            self.b[row_with_max_el_in_col + col] = temp_b
         return matrix
 
     @staticmethod
@@ -128,10 +130,10 @@ class MatrixForm:
 
         return multiplied_matrix
 
-    def jacobi_step(self, start_value: int, epsilon: float=10**-6):
+    def jacobi_step(self, start_value: int, epsilon: float = 10**-5):
         iterations = 0
         x0 = [start_value] * len(self.inv_diag_matrix_times_lr)
-        xnext = x0
+        xnext = [x for x in x0]
         difference = 1000
         while difference > epsilon or iterations == 1:
             os.system('clear')
@@ -155,32 +157,17 @@ class MatrixForm:
             x0 = [x for x in xnext]
             print(f"Difference: {difference}")
             print(f"Epsilon   : {epsilon}")
-            time.sleep(0.1)
-
-
-
-
-
+            time.sleep(0.05)
 
 
 if __name__ == "__main__":
     ausgeben = True
 
-
-    # m6 = MatrixForm([
-    #     [1,   2,  3,  4,  5,  6],
-    #     [7,   8,  9, 10, 11, 12],
-    #     [13, 14, 15, 16, 17, 18],
-    #     [19, 20, 21, 22, 23, 24],
-    #     [25, 26, 27, 28, 29, 30],
-    #     [31, 32, 33, 34, 35, 36],
-    # ], [13, 14, 15, 1, 1, 1], False)
-
     m3 = MatrixForm([
         [-7, 4, -2],
         [4, 6, 1],
         [-1, 1, 3]
-    ], [[2], [-5], [4]], pivot_sort=PivotSort.NO_SORT)
+    ], [[2], [-5], [4]], pivot_sort=PivotSort.MAX)
 
 
     ausgabe = m3
@@ -190,25 +177,32 @@ if __name__ == "__main__":
 
         print(f"\nMatrix nach Spaltenpivotisierung:")
         for row in range(len(ausgabe.pivot_sorted_matrix)):
-            print(ausgabe.pivot_sorted_matrix[row])
+            print(f"{ausgabe.pivot_sorted_matrix[row]} | {ausgabe.b[row]}")
 
-        # print(f"\nDiagonalmatrix:")
-        # for row in range(len(ausgabe.diag_matrix)):
-        #     print(ausgabe.diag_matrix[row])
-        #
-        # print(f"\nInverse Diagonalmatrix:")
-        # for row in range(len(ausgabe.inv_diag_matrix)):
-        #     print(ausgabe.inv_diag_matrix[row])
-        #
-        # print(f"\nLinke untere Matrix:")
-        # for row in range(len(ausgabe.bottom_left_matrix)):
-        #     print(ausgabe.bottom_left_matrix[row])
-        #
-        # print(f"\nRechte obere Matrix:")
-        # for row in range(len(ausgabe.top_right_matrix)):
-        #     print(ausgabe.top_right_matrix[row])
-        #
-        # print(f"\nL+R:")
-        # for row in range(len(ausgabe.left_and_right_matrix)):
-        #     print(ausgabe.left_and_right_matrix[row])
+        print(f"\nDiagonalmatrix:")
+        for row in range(len(ausgabe.diag_matrix)):
+            print(ausgabe.diag_matrix[row])
 
+        print(f"\nInverse Diagonalmatrix:")
+        for row in range(len(ausgabe.inv_diag_matrix)):
+            print(ausgabe.inv_diag_matrix[row])
+
+        print(f"\nLinke untere Matrix:")
+        for row in range(len(ausgabe.bottom_left_matrix)):
+            print(ausgabe.bottom_left_matrix[row])
+
+        print(f"\nRechte obere Matrix:")
+        for row in range(len(ausgabe.top_right_matrix)):
+            print(ausgabe.top_right_matrix[row])
+
+        print(f"\nL+R:")
+        for row in range(len(ausgabe.left_and_right_matrix)):
+            print(ausgabe.left_and_right_matrix[row])
+
+        print(f"\nD-1 * L+R:")
+        for row in range(len(ausgabe.inv_diag_matrix_times_lr)):
+            print(ausgabe.inv_diag_matrix_times_lr[row])
+
+        print(f"\nD-1 * b:")
+        for row in range(len(ausgabe.inv_diag_matrix_times_b)):
+            print(ausgabe.inv_diag_matrix_times_b[row])
