@@ -1,3 +1,6 @@
+import math
+import time
+import os
 from enum import Enum
 
 
@@ -31,8 +34,8 @@ class MatrixForm:
         self.bottom_left_matrix = self.get_bottom_left_matrix()
         self.top_right_matrix = self.get_top_right_matrix()
         self.left_and_right_matrix = self.add_matrices(self.bottom_left_matrix, self.top_right_matrix)
-        self.inv_diag_times_b = self.get_inv_diag_times_b()
-        self.inv_diag_times_lr = self.get_inv_diag_times_lr()
+        self.inv_diag_matrix_times_b = self.get_inv_diag_times_b()
+        self.inv_diag_matrix_times_lr = self.get_inv_diag_times_lr()
 
     def get_pivot_sorted_matrix(self, pivot_sort) -> list[list[int]]:
         matrix = [x[:] for x in self.matrix]
@@ -125,23 +128,35 @@ class MatrixForm:
 
         return multiplied_matrix
 
-    @staticmethod
-    def jacobi_step(start_value: int, inv_diag_matrix_times_b: list[list[int]], inv_diag_matrix_times_left_and_right: list[list[int]]):
+    def jacobi_step(self, start_value: int, epsilon: float=10**-6):
         iterations = 0
-        x0 = 
-        print(f"x0: {x0}")
-        print(len(inv_diag_matrix_times_left_and_right))
+        x0 = [start_value] * len(self.inv_diag_matrix_times_lr)
         xnext = x0
-        while True:
+        difference = 1000
+        while difference > epsilon or iterations == 1:
+            os.system('clear')
             iterations += 1
             print(f"iteration {iterations}:")
-            for equation in range(len(inv_diag_matrix_times_left_and_right)):
+            for equation in range(len(self.inv_diag_matrix_times_lr)):
                 summands = []
-                for coefficient in range(len(inv_diag_matrix_times_left_and_right[equation])):
-                    summands.append(inv_diag_matrix_times_left_and_right[coefficient] * xnext[coefficient])
-                xnext[equation] = sum(*summands) + inv_diag_matrix_times_b[equation][0]
+                for coefficient in range(len(self.inv_diag_matrix_times_lr[equation])):
+                    summands.append(self.inv_diag_matrix_times_lr[equation][coefficient] * x0[coefficient])
+                xnext[equation] = -sum(summands) + self.inv_diag_matrix_times_b[equation][0]
                 print(f"x{equation} = {xnext[equation]}")
-            print()
+            xnext_vector_length = 0
+            for x in xnext:
+                xnext_vector_length += x**2
+            xnext_vector_length = math.sqrt(xnext_vector_length)
+            x0_vector_length = 0
+            for x in x0:
+                x0_vector_length += x**2
+            x0_vector_length = math.sqrt(x0_vector_length)
+            difference = abs(xnext_vector_length - x0_vector_length)
+            x0 = [x for x in xnext]
+            print(f"Difference: {difference}")
+            print(f"Epsilon   : {epsilon}")
+            time.sleep(0.1)
+
 
 
 
