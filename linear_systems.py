@@ -29,12 +29,9 @@ class MatrixForm:
             self.pivot_sorted_matrix = self.get_pivot_sorted_matrix(pivot_sort)
         self._zero_matrix = [[0 for _ in self.matrix] for _ in self.matrix]
         self.diag_matrix = self._get_diag_matrix()
-        self.inv_diag_matrix = self.get_inv_diag_matrix()
         self.bottom_left_matrix = self.get_bottom_left_matrix()
         self.top_right_matrix = self.get_top_right_matrix()
         self.left_and_right_matrix = self.add_matrices(self.bottom_left_matrix, self.top_right_matrix)
-        self.inv_diag_matrix_times_b = self.get_inv_diag_times_b()
-        self.inv_diag_matrix_times_lr = self.get_inv_diag_times_lr()
 
     def get_pivot_sorted_matrix(self, pivot_sort) -> list[list[int]]:
         matrix = [x[:] for x in self.matrix]
@@ -67,18 +64,11 @@ class MatrixForm:
             case PivotSort.MIN:
                 return column.index(min(column))
 
-    def _get_diag_matrix(self) -> list[list[int]]:
-        diag_matrix = [x[:] for x in self._zero_matrix]
+    def _get_diag_matrix(self) -> list[int]:
+        diag_matrix = []
         for row in range(0, len(self.pivot_sorted_matrix)):
-            diag_matrix[row][row] = self.pivot_sorted_matrix[row][row]
+            diag_matrix.append(self.pivot_sorted_matrix[row][row])
         return diag_matrix
-
-    def get_inv_diag_matrix(self) -> list[list[int]]:
-        diag_inv_matrix = [x[:] for x in self.diag_matrix]
-        for row in range(len(diag_inv_matrix)):
-            for _ in range(len(diag_inv_matrix)):
-                diag_inv_matrix[row][row] = 1 / diag_inv_matrix[row][row]
-        return diag_inv_matrix
 
     def get_bottom_left_matrix(self) -> list[list[int]]:
         left_matrix = [x[:] for x in self._zero_matrix]
@@ -98,8 +88,6 @@ class MatrixForm:
             i += 1
         return right_matrix
 
-    def get_inv_diag_times_b(self):
-        return self.multiply_matrices(self.inv_diag_matrix, self.b)
 
     def get_inv_diag_times_lr(self):
         return self.multiply_matrices(self.inv_diag_matrix, self.left_and_right_matrix)
@@ -131,18 +119,18 @@ class MatrixForm:
 
     def jacobi_step(self, start_value: int, epsilon: float = 10**-5):
         iterations = 0
-        x0 = [start_value] * len(self.inv_diag_matrix_times_lr)
-        xnext = [x for x in x0]
+        x0 = [start_value] * len(self.left_and_right_matrix)
+        xnext = [start_value] * len(self.left_and_right_matrix)
         difference = 1000
         while difference > epsilon or iterations == 1:
             os.system('clear')
             iterations += 1
             print(f"iteration {iterations}:")
-            for equation in range(len(self.inv_diag_matrix_times_lr)):
+            for equation in range(len(self.left_and_right_matrix)):
                 summands = []
-                for coefficient in range(len(self.inv_diag_matrix_times_lr[equation])):
-                    summands.append(self.inv_diag_matrix_times_lr[equation][coefficient] * x0[coefficient])
-                xnext[equation] = -sum(summands) + self.inv_diag_matrix_times_b[equation][0]
+                for coefficient in range(len(self.left_and_right_matrix[equation])):
+                    summands.append(self.left_and_right_matrix[equation][coefficient] * x0[coefficient])
+                xnext[equation] = (-sum(summands) + self.b[equation][0]) / self.diag_matrix[equation]
                 print(f"x{equation} = {xnext[equation]}")
             xnext_vector_length = 0
             for x in xnext:
@@ -167,9 +155,6 @@ class MatrixForm:
         for row in range(len(self.diag_matrix)):
             print(self.diag_matrix[row])
 
-        print(f"\nInverse Diagonalmatrix:")
-        for row in range(len(self.inv_diag_matrix)):
-            print(self.inv_diag_matrix[row])
 
         print(f"\nLinke untere Matrix:")
         for row in range(len(self.bottom_left_matrix)):
@@ -183,12 +168,45 @@ class MatrixForm:
         for row in range(len(self.left_and_right_matrix)):
             print(self.left_and_right_matrix[row])
 
-        print(f"\nD-1 * L+R:")
-        for row in range(len(self.inv_diag_matrix_times_lr)):
-            print(self.inv_diag_matrix_times_lr[row])
-
-        print(f"\nD-1 * b:")
-        for row in range(len(self.inv_diag_matrix_times_b)):
-            print(self.inv_diag_matrix_times_b[row])
-
         return ""
+
+
+# 2.2
+def fixpunkt(start_value: int, epsilon: float = 10**-5):
+    iterations = 0
+    x10 = start_value
+    x20 = start_value
+    difference = 1000
+    while difference > epsilon:
+        iterations += 1
+        x1next = (43*x20 - 42) / x10
+        x2next = (x10**2 - 42) / -43
+        diff1 = x1next - x10
+        diff2 = x2next - x20
+        difference = math.sqrt(sum([diff1**2, diff2**2]))
+        print(f"iteration: {iterations}")
+        print(f"x1: {x1next}")
+        print(f"x2: {x2next}")
+        print(f"difference: {difference}")
+        x10 = x1next
+        x20 = x2next
+        time.sleep(0.1)
+
+
+
+
+
+# 2.3
+
+def newton(start_value: int, epsilon: float = 10**-5):
+    iterations = 0
+    x0 = start_value
+    xnext = start_value
+    difference = 1000
+    while difference > epsilon:
+        xnext = x0 - (x0**2 - 43 * x0 + 42)
+
+
+
+if __name__ == '__main__':
+    fixpunkt(1)
